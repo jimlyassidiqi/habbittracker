@@ -1,7 +1,29 @@
 /* Font dasar & Background */
 body { 
     font-family: 'Inter', sans-serif; 
-    background-color: #f8fafc; 
+    /* Liquid Gradient Background */
+    background: linear-gradient(-45deg, #000000, #333333, #cccccc, #ffffff);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Glassmorphism Effect */
+.glass {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Grid Kalender 7 Kolom */
@@ -36,6 +58,11 @@ body {
     border-radius: 4px; 
 }
 
+/* Dark Mode Scrollbar */
+.dark .custom-scroll::-webkit-scrollbar-thumb {
+    background-color: #475569;
+}
+
 /* Animasi Modal */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -48,17 +75,17 @@ body {
 }
 
 @keyframes scaleIn {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+    from { transform: scale(0.9) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
 @keyframes scaleOut {
-    from { transform: scale(1); opacity: 1; }
-    to { transform: scale(0.95); opacity: 0; }
+    from { transform: scale(1) translateY(0); opacity: 1; }
+    to { transform: scale(0.9) translateY(20px); opacity: 0; }
 }
 
-.modal-enter { animation: fadeIn 0.2s ease-out forwards; }
-.modal-exit { animation: fadeOut 0.2s ease-in forwards; }
+.modal-enter { animation: fadeIn 0.3s ease-out forwards; }
+.modal-exit { animation: fadeOut 0.3s ease-in forwards; }
 
-.modal-content-enter { animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.modal-content-exit { animation: scaleOut 0.2s ease-in forwards; }
+.modal-content-enter { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.modal-content-exit { animation: scaleOut 0.3s ease-in forwards; }

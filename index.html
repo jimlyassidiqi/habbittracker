@@ -7,6 +7,11 @@
     
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     
     <!-- Icon Library -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -14,65 +19,118 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="text-slate-700 min-h-screen flex flex-col items-center justify-center py-6 sm:py-10 px-4">
+<body class="text-slate-700 dark:text-slate-200 min-h-screen flex flex-col items-center justify-center py-6 sm:py-10 px-4 transition-colors duration-300">
 
-    <!-- Container Utama -->
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden p-4 sm:p-6">
+    <!-- Layout Wrapper -->
+    <div class="flex flex-col md:flex-row gap-6 w-full max-w-5xl items-start justify-center">
         
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
+        <!-- Shortcut Button -->
+        <button id="newsToggleBtn" class="glass p-3 rounded-2xl text-slate-700 dark:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-700/50 transition-all duration-300 h-fit flex flex-col items-center gap-2" title="Berita Real Madrid">
+            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" alt="RM" class="w-8 h-8 object-contain">
+        </button>
+
+        <!-- Sidebar Real Madrid -->
+        <aside id="newsSidebar" class="hidden glass w-full md:w-80 p-5 rounded-2xl shadow-2xl text-slate-700 dark:text-slate-200 h-fit transition-colors duration-300 relative">
+            <button id="closeNewsBtn" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-times"></i></button>
+            <div class="flex items-center gap-3 mb-5 border-b border-white/30 dark:border-slate-600/50 pb-3">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" alt="Real Madrid Logo" class="w-10 h-10 object-contain drop-shadow-md">
+                <div>
+                    <h2 class="font-bold text-lg leading-tight">Real Madrid</h2>
+                    <p class="text-[10px] opacity-70 uppercase tracking-wider">Official News</p>
+                </div>
+            </div>
+            <div class="space-y-5">
+                <!-- News Item 1 -->
+                <div class="group cursor-pointer">
+                    <div class="h-40 bg-slate-200 dark:bg-slate-700 rounded-xl mb-3 overflow-hidden relative shadow-sm">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Santiago_Bernabeu_Stadium_-_Madrid.jpg/640px-Santiago_Bernabeu_Stadium_-_Madrid.jpg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Match Highlight">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
+                        <span class="absolute bottom-2 left-2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">HIGHLIGHT</span>
+                    </div>
+                    <h3 class="font-bold text-sm leading-snug group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">Kemenangan Dramatis di Santiago Bernabéu</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1"><i class="far fa-clock"></i> 2 Jam yang lalu</p>
+                </div>
+                <!-- News Item 2 -->
+                <div class="group cursor-pointer border-t border-white/30 dark:border-slate-600/50 pt-4">
+                    <h3 class="font-semibold text-sm leading-snug hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">Ancelotti Konfirmasi Skuad untuk Laga El Clásico Mendatang</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1"><i class="far fa-clock"></i> 5 Jam yang lalu</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Container Utama -->
+        <div class="glass w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-4 sm:p-6 transition-colors duration-300">
+        
+            <!-- Calendar Section -->
             <div>
-                <h1 class="text-2xl font-bold text-slate-800">Habit Tracker</h1>
-                <p class="text-sm text-slate-500" id="currentMonthYear">Loading...</p>
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 id="greetingTitle" class="text-2xl font-bold text-slate-800 dark:text-white transition-opacity duration-500">Habit Tracker</h1>
+                    <p class="text-sm text-slate-500 dark:text-slate-400" id="currentMonthYear">Loading...</p>
+                    <div id="weatherTimeWidget" class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-3 hidden transition-opacity duration-500">
+                        <span id="liveTime" class="font-medium"></span>
+                        <span id="liveWeather" class="flex items-center gap-1"></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button id="themeToggleBtn" class="p-2 rounded-full hover:bg-white/30 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-300 mr-1 transition-colors">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="prevMonthBtn" class="p-2 rounded-full hover:bg-white/30 dark:hover:bg-slate-700/50 dark:text-slate-300 transition-colors"><i class="fas fa-chevron-left"></i></button>
+                    <button id="nextMonthBtn" class="p-2 rounded-full hover:bg-white/30 dark:hover:bg-slate-700/50 dark:text-slate-300 transition-colors"><i class="fas fa-chevron-right"></i></button>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button id="prevMonthBtn" class="p-2 rounded-full hover:bg-slate-100"><i class="fas fa-chevron-left"></i></button>
-                <button id="nextMonthBtn" class="p-2 rounded-full hover:bg-slate-100"><i class="fas fa-chevron-right"></i></button>
+
+            <!-- Nama Hari -->
+            <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
             </div>
-        </div>
 
-        <!-- Nama Hari -->
-        <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
-        </div>
-
-        <!-- Grid Kalender -->
-        <div id="calendar" class="calendar-grid">
-            <!-- Tanggal akan di-render via JS -->
+            <!-- Grid Kalender -->
+            <div id="calendar" class="calendar-grid">
+                <!-- Tanggal akan di-render via JS -->
+            </div>
         </div>
     </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-6 text-white text-sm font-medium opacity-80 hover:opacity-100 transition-opacity drop-shadow-md">
+        dibuat oleh achmad jimly assidiqi
+    </footer>
 
     <!-- Modal Detail Hari -->
     <div id="entryModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4">
-        <div id="modalContent" class="bg-white w-full max-w-sm rounded-2xl p-5 sm:p-6 shadow-2xl transform">
+        <div id="modalContent" class="glass w-full max-w-sm rounded-2xl p-5 sm:p-6 shadow-2xl transform transition-colors duration-300">
             
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <h2 id="modalDateTitle" class="text-xl font-bold text-slate-800">Detail</h2>
-                    <p id="modalHolidayText" class="text-sm text-red-500 font-medium mt-1 hidden"></p>
+                    <h2 id="modalDateTitle" class="text-xl font-bold text-slate-800 dark:text-white">Detail</h2>
+                    <p id="modalHolidayText" class="text-sm text-red-500 dark:text-red-400 font-medium mt-1 hidden"></p>
                 </div>
-                <button id="closeModalBtn" class="text-slate-400 hover:text-red-500 p-1"><i class="fas fa-times"></i></button>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1"><i class="fas fa-times"></i></button>
             </div>
 
             <div class="space-y-4 custom-scroll max-h-[70vh] overflow-y-auto pr-2">
                 
                 <!-- Status Checkbox -->
-                <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition">
+                <label class="flex items-center gap-3 p-3 border border-white/40 dark:border-slate-600/50 rounded-xl cursor-pointer hover:bg-white/30 dark:hover:bg-slate-700/50 transition bg-white/20 dark:bg-slate-800/30">
                     <input type="checkbox" id="statusCheck" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500">
-                    <span class="font-medium">Habit Selesai</span>
+                    <span class="font-medium dark:text-slate-200">Habit Selesai</span>
                 </label>
 
                 <!-- Catatan Text -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">CATATAN</label>
-                    <textarea id="noteInput" rows="3" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-200 outline-none resize-none" placeholder="Bagaimana harimu?"></textarea>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">CATATAN</label>
+                    <textarea id="noteInput" rows="3" class="w-full p-3 border border-white/40 dark:border-slate-600/50 rounded-xl text-sm focus:ring-2 focus:ring-indigo-200 outline-none resize-none bg-white/30 dark:bg-slate-800/30 dark:text-white placeholder-slate-500" placeholder="Bagaimana harimu?"></textarea>
                 </div>
 
                 <!-- Upload Foto -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">FOTO</label>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">FOTO</label>
                     <input type="file" id="photoInput" accept="image/*" class="hidden">
-                    <div id="photoPreviewContainer" class="relative w-full h-32 bg-slate-100 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-300 cursor-pointer overflow-hidden">
+                    <div id="photoPreviewContainer" class="relative w-full h-32 bg-white/30 dark:bg-slate-800/30 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-500 cursor-pointer overflow-hidden hover:bg-white/50 dark:hover:bg-slate-700/50 transition">
                         <div id="photoPlaceholder" class="text-center text-slate-400">
                             <i class="fas fa-camera mb-1"></i><br><span class="text-xs">Tap untuk upload</span>
                         </div>
@@ -83,9 +141,9 @@
 
                 <!-- Rekam Suara -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">PESAN SUARA</label>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">PESAN SUARA</label>
                     <div class="flex items-center gap-2">
-                        <button id="recordBtn" class="flex-1 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition flex items-center justify-center gap-2">
+                        <button id="recordBtn" class="flex-1 py-2 bg-white/30 dark:bg-slate-800/30 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-medium hover:bg-white/50 dark:hover:bg-slate-700/50 transition flex items-center justify-center gap-2">
                             <i class="fas fa-microphone"></i> <span id="recordBtnText">Rekam</span>
                         </button>
                     </div>
@@ -96,6 +154,19 @@
             </div>
 
             <button id="saveBtn" class="w-full mt-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition">Simpan</button>
+        </div>
+    </div>
+
+    <!-- Login Modal (Username Only) -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900 z-[60] flex items-center justify-center hidden">
+        <div class="glass p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center mx-4">
+            <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-300 text-2xl">
+                <i class="fas fa-user"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2 text-slate-800 dark:text-white">Selamat Datang!</h2>
+            <p class="text-slate-500 dark:text-slate-400 mb-6 text-sm">Siapa nama panggilanmu?</p>
+            <input type="text" id="usernameInput" class="w-full p-3 border border-white/40 dark:border-slate-600/50 rounded-xl mb-4 bg-white/30 dark:bg-slate-800/30 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-center placeholder-slate-500" placeholder="Nama kamu..." autocomplete="off">
+            <button id="loginBtn" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 dark:shadow-none">Mulai</button>
         </div>
     </div>
 

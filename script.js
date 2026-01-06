@@ -2,6 +2,9 @@
 let currentDate = new Date();
 let selectedDateKey = null;
 let habits = JSON.parse(localStorage.getItem('habitData')) || {};
+let username = localStorage.getItem('habitUsername');
+let theme = localStorage.getItem('habitTheme') || 'light';
+let greetingInterval;
 let modalCloseTimeout;
 
 // Media Recorder Variables
@@ -12,14 +15,15 @@ let currentPhotoBase64 = null;
 
 // --- DOM Elements ---
 const calendarEl = document.getElementById('calendar');
-const modal = document.getElementById('entryModal');
-const modalContent = document.getElementById('modalContent');
 const photoInput = document.getElementById('photoInput');
 const photoPreviewContainer = document.getElementById('photoPreviewContainer');
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
+    checkLogin();
+    initTheme();
     renderCalendar();
+    initTimeAndWeather();
     setupEventListeners();
 });
 
@@ -28,6 +32,10 @@ function setupEventListeners() {
     // Navigasi Bulan
     document.getElementById('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
     document.getElementById('nextMonthBtn').addEventListener('click', () => changeMonth(1));
+
+    // Theme & Login
+    document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
 
     // Modal Actions
     document.getElementById('closeModalBtn').addEventListener('click', closeModal);
@@ -41,6 +49,86 @@ function setupEventListeners() {
     // Audio Actions
     document.getElementById('recordBtn').addEventListener('click', toggleRecording);
     document.getElementById('removeAudioBtn').addEventListener('click', removeAudio);
+
+    // News Actions
+    document.getElementById('newsToggleBtn').addEventListener('click', toggleNews);
+    document.getElementById('closeNewsBtn').addEventListener('click', toggleNews);
+}
+
+// --- Login & Theme Logic ---
+function checkLogin() {
+    if (!username) {
+        document.getElementById('loginModal').classList.remove('hidden');
+    } else {
+        updateGreeting();
+    }
+}
+
+function handleLogin() {
+    const input = document.getElementById('usernameInput');
+    const val = input.value.trim();
+    if (val) {
+        username = val;
+        localStorage.setItem('habitUsername', username);
+        document.getElementById('loginModal').classList.add('hidden');
+        updateGreeting();
+    } else {
+        alert("Silakan isi nama panggilanmu!");
+    }
+}
+
+function updateGreeting() {
+    const title = document.getElementById('greetingTitle');
+    const greetings = ["Halo", "Hello", "Hola", "Bonjour", "Konnichiwa"];
+    let index = 0;
+
+    if (greetingInterval) clearInterval(greetingInterval);
+
+    const changeText = () => {
+        title.style.opacity = '0'; // Fade Out
+        setTimeout(() => {
+            title.innerText = `${greetings[index]}, ${username}!`;
+            title.style.opacity = '1'; // Fade In
+            index = (index + 1) % greetings.length;
+        }, 500); // Tunggu 500ms (sesuai duration-500 CSS)
+    };
+
+    // Set awal tanpa animasi
+    title.innerText = `${greetings[0]}, ${username}!`;
+    index = 1;
+    
+    greetingInterval = setInterval(changeText, 3000);
+}
+
+function toggleNews() {
+    const sidebar = document.getElementById('newsSidebar');
+    const btn = document.getElementById('newsToggleBtn');
+    
+    // Toggle visibility
+    sidebar.classList.toggle('hidden');
+    btn.classList.toggle('hidden');
+}
+
+function initTheme() {
+    if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.querySelector('#themeToggleBtn i').className = 'fas fa-sun';
+    }
+}
+
+function toggleTheme() {
+    const html = document.documentElement;
+    if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        theme = 'light';
+        document.querySelector('#themeToggleBtn i').className = 'fas fa-moon';
+    } else {
+        html.classList.add('dark');
+        theme = 'dark';
+        document.querySelector('#themeToggleBtn i').className = 'fas fa-sun';
+    }
+    localStorage.setItem('habitTheme', theme);
+    renderCalendar(); // Re-render untuk update warna border/bg di JS
 }
 
 // --- Calendar Logic ---
@@ -56,9 +144,10 @@ function renderCalendar() {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // Padding hari kosong
+    // Padding hari kosong (Awal Bulan)
     for (let i = 0; i < firstDay; i++) {
         const emptyDiv = document.createElement('div');
+        emptyDiv.className = "day-card invisible"; // Invisible tapi menjaga dimensi
         calendarEl.appendChild(emptyDiv);
     }
 
@@ -71,17 +160,28 @@ function renderCalendar() {
         const holidayName = getHoliday(year, month + 1, day);
         const isHoliday = !!holidayName;
         const isSunday = new Date(year, month, day).getDay() === 0;
+        const now = new Date();
+        const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
         
         const dayEl = document.createElement('div');
         
-        let classes = "day-card rounded-xl flex flex-col items-center justify-center cursor-pointer border ";
+        let classes = "day-card rounded-xl flex flex-col items-center justify-center cursor-pointer border backdrop-blur-sm transition-all duration-300 ";
         if (data && data.completed) {
-            classes += "bg-indigo-500 text-white border-indigo-500";
+            classes += "bg-indigo-500/80 text-white border-indigo-400/50 shadow-lg shadow-indigo-500/30";
         } else if (isHoliday || isSunday) {
-            classes += "bg-white text-red-500 border-slate-200 hover:border-red-300";
+            classes += "bg-white/30 dark:bg-slate-800/40 text-red-600 dark:text-red-400 border-white/40 dark:border-slate-600/50 hover:bg-white/50 dark:hover:bg-slate-700/50";
         } else {
-            classes += "bg-white text-slate-700 border-slate-200 hover:border-indigo-300";
+            classes += "bg-white/30 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 border-white/40 dark:border-slate-600/50 hover:bg-white/50 dark:hover:bg-slate-700/50";
         }
+
+        if (isToday) {
+            classes += " ring-2 ring-indigo-500 dark:ring-indigo-400 font-extrabold";
+        }
+
+        if (selectedDateKey === dateKey) {
+            classes += " ring-2 ring-offset-2 ring-indigo-500 dark:ring-indigo-400";
+        }
+
         dayEl.className = classes;
         if (holidayName) dayEl.title = holidayName;
         
@@ -98,6 +198,15 @@ function renderCalendar() {
         dayEl.addEventListener('click', () => openModal(dateKey, day, monthNames[month]));
         calendarEl.appendChild(dayEl);
     }
+
+    // Padding hari kosong (Akhir Bulan) untuk menjaga simetri 6 baris (42 sel)
+    const totalCellsFilled = firstDay + daysInMonth;
+    const totalSlots = 42; // 6 baris x 7 kolom
+    for (let i = totalCellsFilled; i < totalSlots; i++) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = "day-card invisible";
+        calendarEl.appendChild(emptyDiv);
+    }
 }
 
 function changeMonth(offset) {
@@ -108,6 +217,7 @@ function changeMonth(offset) {
 // --- Modal & Data Logic ---
 function openModal(dateKey, day, monthName) {
     selectedDateKey = dateKey;
+    renderCalendar(); // Re-render untuk update highlight seleksi
     const data = habits[dateKey] || {};
 
     document.getElementById('modalDateTitle').innerText = `${day} ${monthName}`;
@@ -151,6 +261,9 @@ function openModal(dateKey, day, monthName) {
     // Reset timeout jika user membuka modal dengan cepat setelah menutup
     clearTimeout(modalCloseTimeout);
     
+    const modal = document.getElementById('entryModal');
+    const modalContent = document.getElementById('modalContent');
+    
     modal.classList.remove('hidden');
     modal.classList.remove('modal-exit');
     modal.classList.add('modal-enter');
@@ -160,16 +273,21 @@ function openModal(dateKey, day, monthName) {
 }
 
 function closeModal() {
+    const modal = document.getElementById('entryModal');
+    const modalContent = document.getElementById('modalContent');
+    
     modal.classList.remove('modal-enter');
     modal.classList.add('modal-exit');
     
     modalContent.classList.remove('modal-content-enter');
     modalContent.classList.add('modal-content-exit');
 
-    // Tunggu animasi selesai (200ms) baru sembunyikan elemen
+    // Tunggu animasi selesai (300ms) baru sembunyikan elemen
     modalCloseTimeout = setTimeout(() => {
         modal.classList.add('hidden');
-    }, 200);
+        selectedDateKey = null;
+        renderCalendar(); // Hapus highlight seleksi
+    }, 300);
     
     stopRecording();
 }
@@ -331,4 +449,58 @@ function getHoliday(year, month, day) {
     };
 
     return fixedHolidays[formattedMonthDay] || movableHolidays[formattedDate] || null;
+}
+
+// --- Time & Weather Logic ---
+function initTimeAndWeather() {
+    updateTime();
+    setInterval(updateTime, 1000);
+    getWeather();
+    setInterval(getWeather, 15 * 60 * 1000); // Update cuaca tiap 15 menit
+}
+
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const dateString = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+    
+    const widget = document.getElementById('weatherTimeWidget');
+    const timeEl = document.getElementById('liveTime');
+    
+    if (timeEl) timeEl.innerText = `${dateString}, ${timeString}`;
+    if (widget) widget.classList.remove('hidden');
+}
+
+function getWeather() {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(async position => {
+        try {
+            const { latitude, longitude } = position.coords;
+            // Menggunakan Open-Meteo API (Gratis, tanpa key)
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=auto`;
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.current_weather) {
+                const { temperature, weathercode } = data.current_weather;
+                const weatherDesc = getWeatherDesc(weathercode);
+                const weatherEl = document.getElementById('liveWeather');
+                if (weatherEl) {
+                    weatherEl.innerHTML = `<i class="fas fa-cloud-sun"></i> ${Math.round(temperature)}°C ${weatherDesc}`;
+                }
+            }
+        } catch (e) { console.error("Gagal memuat cuaca", e); }
+    }, () => console.log("Izin lokasi ditolak"));
+}
+
+function getWeatherDesc(code) {
+    // WMO Weather interpretation codes
+    if (code === 0) return "Cerah";
+    if (code <= 3) return "Berawan";
+    if (code <= 48) return "Berkabut";
+    if (code <= 67 || (code >= 80 && code <= 82)) return "Hujan";
+    if (code >= 95) return "Badai";
+    return "";
 }
