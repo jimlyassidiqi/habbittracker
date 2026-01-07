@@ -20,6 +20,7 @@ const photoPreviewContainer = document.getElementById('photoPreviewContainer');
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
+    initNavbar();
     checkLogin();
     initTheme();
     renderCalendar();
@@ -53,6 +54,36 @@ function setupEventListeners() {
     // News Actions
     document.getElementById('newsToggleBtn').addEventListener('click', toggleNews);
     document.getElementById('closeNewsBtn').addEventListener('click', toggleNews);
+}
+
+// --- Navbar Logic ---
+function initNavbar() {
+    const nav = document.createElement('nav');
+    nav.className = "fixed top-0 left-0 w-full h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm z-50 flex items-center justify-between px-4 transition-colors duration-300 border-b border-slate-200 dark:border-slate-700";
+
+    const logo = document.createElement('div');
+    logo.className = "text-xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2 cursor-default";
+    logo.innerHTML = '<i class="fas fa-check-circle"></i> HabitTracker';
+
+    const btnContainer = document.createElement('div');
+    btnContainer.className = "flex items-center gap-2";
+
+    // Pindahkan tombol eksisting ke navbar
+    const ids = ['newsToggleBtn', 'themeToggleBtn', 'loginBtn'];
+    ids.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.classList.remove('absolute', 'fixed', 'top-4', 'top-5', 'right-4', 'right-5', 'left-4', 'z-10', 'm-4');
+            btn.classList.add('relative', 'p-2', 'rounded-lg', 'hover:bg-slate-100', 'dark:hover:bg-slate-800', 'transition-colors');
+            btnContainer.appendChild(btn);
+        }
+    });
+
+    nav.appendChild(logo);
+    nav.appendChild(btnContainer);
+
+    document.body.prepend(nav);
+    document.body.classList.add('pt-20');
 }
 
 // --- Login & Theme Logic ---
