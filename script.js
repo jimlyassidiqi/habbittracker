@@ -2,7 +2,7 @@
 let currentDate = new Date();
 let selectedDateKey = null;
 let habits = JSON.parse(localStorage.getItem('habitData')) || {};
-let username = localStorage.getItem('habitUsername');
+let username = "Teman";
 let theme = localStorage.getItem('habitTheme') || 'light';
 let greetingInterval;
 let modalCloseTimeout;
@@ -20,11 +20,13 @@ const photoPreviewContainer = document.getElementById('photoPreviewContainer');
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
+    initAnimations();
     initNavbar();
-    checkLogin();
+    updateGreeting();
     initTheme();
     renderCalendar();
     initTimeAndWeather();
+    initNewsWidget();
     setupEventListeners();
 });
 
@@ -36,7 +38,6 @@ function setupEventListeners() {
 
     // Theme & Login
     document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
-    document.getElementById('loginBtn').addEventListener('click', handleLogin);
 
     // Modal Actions
     document.getElementById('closeModalBtn').addEventListener('click', closeModal);
@@ -56,56 +57,69 @@ function setupEventListeners() {
     document.getElementById('closeNewsBtn').addEventListener('click', toggleNews);
 }
 
+// --- Animations ---
+function initAnimations() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes scaleOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+
+        .day-card { animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+        
+        .btn-animate { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .btn-animate:hover { transform: scale(1.1); }
+        .btn-animate:active { transform: scale(0.95); }
+
+        .modal-enter { animation: fadeIn 0.3s ease-out forwards; }
+        .modal-exit { animation: fadeOut 0.3s ease-in forwards; }
+        .modal-content-enter { animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .modal-content-exit { animation: scaleOut 0.2s ease-in forwards; }
+    `;
+    document.head.appendChild(style);
+}
+
 // --- Navbar Logic ---
 function initNavbar() {
     const nav = document.createElement('nav');
     nav.className = "fixed top-0 left-0 w-full h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm z-50 flex items-center justify-between px-4 transition-colors duration-300 border-b border-slate-200 dark:border-slate-700";
 
     const logo = document.createElement('div');
-    logo.className = "text-xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2 cursor-default";
+    logo.className = "text-xl font-bold text-black dark:text-white flex items-center gap-2 cursor-default";
     logo.innerHTML = '<i class="fas fa-check-circle"></i> HabitTracker';
 
     const btnContainer = document.createElement('div');
     btnContainer.className = "flex items-center gap-2";
 
     // Pindahkan tombol eksisting ke navbar
-    const ids = ['newsToggleBtn', 'themeToggleBtn', 'loginBtn'];
+    const ids = ['newsToggleBtn', 'themeToggleBtn'];
     ids.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
             btn.classList.remove('absolute', 'fixed', 'top-4', 'top-5', 'right-4', 'right-5', 'left-4', 'z-10', 'm-4');
-            btn.classList.add('relative', 'p-2', 'rounded-lg', 'hover:bg-slate-100', 'dark:hover:bg-slate-800', 'transition-colors');
+            btn.classList.add('relative', 'p-2', 'rounded-lg', 'hover:bg-slate-100', 'dark:hover:bg-slate-800', 'transition-colors', 'btn-animate');
             btnContainer.appendChild(btn);
         }
     });
+    
+    // Hapus elemen login
+    const loginBtn = document.getElementById('loginBtn'); if(loginBtn) loginBtn.remove();
+    const loginModal = document.getElementById('loginModal'); if(loginModal) loginModal.remove();
+
+    // Widget Cuaca & Waktu (Responsive)
+    const weatherWidget = document.createElement('div');
+    weatherWidget.id = 'weatherTimeWidget';
+    weatherWidget.className = "hidden md:flex flex-col items-end mr-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300";
+    weatherWidget.innerHTML = '<div id="liveTime" class="font-medium"></div><div id="liveWeather" class="text-xs opacity-80"></div>';
 
     nav.appendChild(logo);
+    nav.appendChild(weatherWidget);
     nav.appendChild(btnContainer);
 
     document.body.prepend(nav);
     document.body.classList.add('pt-20');
-}
-
-// --- Login & Theme Logic ---
-function checkLogin() {
-    if (!username) {
-        document.getElementById('loginModal').classList.remove('hidden');
-    } else {
-        updateGreeting();
-    }
-}
-
-function handleLogin() {
-    const input = document.getElementById('usernameInput');
-    const val = input.value.trim();
-    if (val) {
-        username = val;
-        localStorage.setItem('habitUsername', username);
-        document.getElementById('loginModal').classList.add('hidden');
-        updateGreeting();
-    } else {
-        alert("Silakan isi nama panggilanmu!");
-    }
 }
 
 function updateGreeting() {
@@ -131,13 +145,87 @@ function updateGreeting() {
     greetingInterval = setInterval(changeText, 3000);
 }
 
+// --- News Logic ---
+function initNewsWidget() {
+    // Buat Sidebar jika belum ada
+    if (!document.getElementById('newsSidebar')) {
+        const sidebar = document.createElement('div');
+        sidebar.id = 'newsSidebar';
+        sidebar.className = "fixed top-0 right-0 w-full md:w-96 h-full bg-white dark:bg-slate-900 shadow-2xl z-[60] transform transition-transform duration-300 translate-x-full flex flex-col hidden";
+        sidebar.innerHTML = `
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fas fa-newspaper"></i> Real Madrid Updates</h2>
+                <button id="closeNewsSidebarBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    <i class="fas fa-times text-slate-600 dark:text-slate-300"></i>
+                </button>
+            </div>
+            <div id="newsContent" class="flex-1 overflow-y-auto p-4 space-y-6">
+                <div class="text-center text-slate-500 mt-10">Memuat berita...</div>
+            </div>
+        `;
+        document.body.appendChild(sidebar);
+        
+        // Event listener untuk tombol close di dalam sidebar
+        document.getElementById('closeNewsSidebarBtn').addEventListener('click', toggleNews);
+    }
+}
+
+async function fetchNews() {
+    const container = document.getElementById('newsContent');
+    if (!container || container.dataset.loaded === 'true') return;
+
+    try {
+        // 1. YouTube Feed (Official Channel)
+        const ytUrl = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCWV3obpZvgCC6Cliytpxz-A';
+        const ytApi = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(ytUrl)}`;
+        
+        // 2. Web News (Google News filtered for Real Madrid)
+        const webUrl = 'https://news.google.com/rss/search?q=Real+Madrid&hl=id-ID&gl=ID&ceid=ID:id';
+        const webApi = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(webUrl)}`;
+
+        const [ytRes, webRes] = await Promise.all([
+            fetch(ytApi).then(r => r.json()),
+            fetch(webApi).then(r => r.json())
+        ]);
+
+        let html = '';
+
+        // Render YouTube
+        if (ytRes.status === 'ok' && ytRes.items.length > 0) {
+            html += `<div class="mb-6"><h3 class="text-sm font-bold uppercase text-red-600 mb-3 flex items-center gap-2"><i class="fab fa-youtube"></i> Official YouTube</h3><div class="space-y-4">`;
+            ytRes.items.slice(0, 3).forEach(item => {
+                html += `<a href="${item.link}" target="_blank" class="block group"><div class="relative rounded-lg overflow-hidden aspect-video mb-2"><img src="${item.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"><div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 flex items-center justify-center"><i class="fas fa-play-circle text-4xl text-white opacity-80 group-hover:opacity-100 shadow-xl"></i></div></div><h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2 group-hover:text-blue-600">${item.title}</h4><p class="text-xs text-slate-500 mt-1">${new Date(item.pubDate).toLocaleDateString('id-ID')}</p></a>`;
+            });
+            html += `</div></div>`;
+        }
+
+        // Render Web News
+        if (webRes.status === 'ok' && webRes.items.length > 0) {
+            html += `<div><h3 class="text-sm font-bold uppercase text-blue-600 mb-3 flex items-center gap-2"><i class="fas fa-globe"></i> Web Madrid</h3><div class="space-y-3">`;
+            webRes.items.slice(0, 5).forEach(item => {
+                html += `<a href="${item.link}" target="_blank" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border border-slate-100 dark:border-slate-700"><h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1 line-clamp-2">${item.title}</h4><div class="flex justify-between items-center text-xs text-slate-500"><span>${item.author || 'News'}</span><span>${new Date(item.pubDate).toLocaleDateString('id-ID')}</span></div></a>`;
+            });
+            html += `</div></div>`;
+        }
+
+        container.innerHTML = html || '<div class="text-center text-slate-500">Tidak ada berita terbaru.</div>';
+        container.dataset.loaded = 'true';
+    } catch (e) {
+        container.innerHTML = '<div class="text-center text-red-500">Gagal memuat berita.</div>';
+    }
+}
+
 function toggleNews() {
     const sidebar = document.getElementById('newsSidebar');
-    const btn = document.getElementById('newsToggleBtn');
     
-    // Toggle visibility
-    sidebar.classList.toggle('hidden');
-    btn.classList.toggle('hidden');
+    if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        sidebar.classList.remove('translate-x-full');
+        fetchNews(); // Ambil berita saat dibuka
+    } else {
+        sidebar.classList.add('translate-x-full');
+        setTimeout(() => sidebar.classList.add('hidden'), 300); // Tunggu animasi
+    }
 }
 
 function initTheme() {
@@ -198,7 +286,7 @@ function renderCalendar() {
         
         let classes = "day-card rounded-xl flex flex-col items-center justify-center cursor-pointer border backdrop-blur-sm transition-all duration-300 ";
         if (data && data.completed) {
-            classes += "bg-indigo-500/80 text-white border-indigo-400/50 shadow-lg shadow-indigo-500/30";
+            classes += "bg-black/80 dark:bg-white/80 text-white dark:text-black border-black/50 dark:border-white/50 shadow-lg shadow-black/30 dark:shadow-white/10";
         } else if (isHoliday || isSunday) {
             classes += "bg-white/30 dark:bg-slate-800/40 text-red-600 dark:text-red-400 border-white/40 dark:border-slate-600/50 hover:bg-white/50 dark:hover:bg-slate-700/50";
         } else {
@@ -206,20 +294,21 @@ function renderCalendar() {
         }
 
         if (isToday) {
-            classes += " ring-2 ring-indigo-500 dark:ring-indigo-400 font-extrabold";
+            classes += " ring-2 ring-black dark:ring-white font-extrabold";
         }
 
         if (selectedDateKey === dateKey) {
-            classes += " ring-2 ring-offset-2 ring-indigo-500 dark:ring-indigo-400";
+            classes += " ring-2 ring-offset-2 ring-black dark:ring-white";
         }
 
         dayEl.className = classes;
+        dayEl.style.animationDelay = `${day * 0.03}s`;
         if (holidayName) dayEl.title = holidayName;
         
         // Indikator Media
         let indicators = '';
         if (data && (data.photo || data.audio)) {
-            indicators = `<div class="flex gap-1 mt-1 text-[8px] ${data.completed ? 'text-indigo-200' : 'text-indigo-400'}">
+            indicators = `<div class="flex gap-1 mt-1 text-[8px] ${data.completed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500'}">
                 ${data.photo ? '<i class="fas fa-camera"></i>' : ''}
                 ${data.audio ? '<i class="fas fa-microphone"></i>' : ''}
             </div>`;
@@ -381,7 +470,7 @@ async function toggleRecording() {
 
     if (mediaRecorder && mediaRecorder.state === "recording") {
         stopRecording();
-        btn.classList.remove('bg-red-100', 'text-red-600');
+        btn.classList.remove('bg-black', 'text-white', 'dark:bg-white', 'dark:text-black');
         btn.classList.add('bg-slate-100', 'text-slate-700');
         btnText.innerText = "Rekam";
     } else {
@@ -410,7 +499,7 @@ async function toggleRecording() {
 
             mediaRecorder.start();
             btn.classList.remove('bg-slate-100', 'text-slate-700');
-            btn.classList.add('bg-red-100', 'text-red-600');
+            btn.classList.add('bg-black', 'text-white', 'dark:bg-white', 'dark:text-black');
             btnText.innerText = "Stop...";
         } catch (err) {
             alert("Izin mikrofon diperlukan untuk merekam suara.");
