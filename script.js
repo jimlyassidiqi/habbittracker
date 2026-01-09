@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCalendar();
     initTimeAndWeather();
     initNewsWidget();
+    initPinFeature();
     setupEventListeners();
 });
 
@@ -172,8 +173,10 @@ function initNewsWidget() {
 
 async function fetchNews() {
     const container = document.getElementById('newsContent');
-    if (!container || container.dataset.loaded === 'true') return;
+    if (!container) return;
 
+    container.innerHTML = '<div class="text-center text-slate-500 mt-10">Memuat berita terbaru...</div>';
+    
     try {
         // 1. YouTube Feed (Official Channel)
         const ytUrl = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCWV3obpZvgCC6Cliytpxz-A';
@@ -209,7 +212,6 @@ async function fetchNews() {
         }
 
         container.innerHTML = html || '<div class="text-center text-slate-500">Tidak ada berita terbaru.</div>';
-        container.dataset.loaded = 'true';
     } catch (e) {
         container.innerHTML = '<div class="text-center text-red-500">Gagal memuat berita.</div>';
     }
@@ -306,9 +308,11 @@ function renderCalendar() {
         if (holidayName) dayEl.title = holidayName;
         
         // Indikator Media
+        const isPinned = data && data.pinned;
         let indicators = '';
-        if (data && (data.photo || data.audio)) {
-            indicators = `<div class="flex gap-1 mt-1 text-[8px] ${data.completed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500'}">
+        if (data && (data.photo || data.audio || isPinned)) {
+            indicators = `<div class="flex gap-1 mt-1 text-[8px] items-center ${data.completed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500'}">
+                ${isPinned ? '<i class="fas fa-thumbtack text-red-500 mr-0.5"></i>' : ''}
                 ${data.photo ? '<i class="fas fa-camera"></i>' : ''}
                 ${data.audio ? '<i class="fas fa-microphone"></i>' : ''}
             </div>`;
@@ -335,6 +339,20 @@ function changeMonth(offset) {
 }
 
 // --- Modal & Data Logic ---
+function initPinFeature() {
+    // Inject Pin Checkbox into Modal if it doesn't exist
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn && !document.getElementById('pinCheck')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = "flex items-center gap-2 mb-4 px-1";
+        wrapper.innerHTML = `
+            <input type="checkbox" id="pinCheck" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+            <label for="pinCheck" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"><i class="fas fa-thumbtack text-red-500"></i> Pin Tanggal Ini (Spesial)</label>
+        `;
+        saveBtn.parentElement.insertBefore(wrapper, saveBtn);
+    }
+}
+
 function openModal(dateKey, day, monthName) {
     selectedDateKey = dateKey;
     renderCalendar(); // Re-render untuk update highlight seleksi
@@ -355,6 +373,10 @@ function openModal(dateKey, day, monthName) {
 
     document.getElementById('statusCheck').checked = data.completed || false;
     document.getElementById('noteInput').value = data.note || '';
+    
+    // Load Pin Status
+    const pinCheck = document.getElementById('pinCheck');
+    if (pinCheck) pinCheck.checked = data.pinned || false;
     
     // Load Photo
     currentPhotoBase64 = data.photo || null;
@@ -415,15 +437,17 @@ function closeModal() {
 function saveEntry() {
     const completed = document.getElementById('statusCheck').checked;
     const note = document.getElementById('noteInput').value;
+    const pinned = document.getElementById('pinCheck') ? document.getElementById('pinCheck').checked : false;
 
-    if (!completed && !note && !currentPhotoBase64 && !currentAudioBlobBase64) {
+    if (!completed && !note && !currentPhotoBase64 && !currentAudioBlobBase64 && !pinned) {
         delete habits[selectedDateKey];
     } else {
         habits[selectedDateKey] = {
             completed,
             note,
             photo: currentPhotoBase64,
-            audio: currentAudioBlobBase64
+            audio: currentAudioBlobBase64,
+            pinned
         };
     }
 
